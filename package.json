@@ -1,0 +1,27 @@
+{
+  "name": "parrot",
+  "version": "1.0.0",
+  "description": "Retweet scheduler",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "dev:web": "next src/web",
+    "build:web": "next build src/web",
+    "start:web": "next start src/web"
+  },
+  "author": "Shedrach Okonofua",
+  "license": "ISC",
+  "devDependencies": {
+    "jest": "^24.7.1"
+  },
+  "dependencies": {
+    "folktale": "^2.3.2",
+    "mongoose": "^5.5.4",
+    "next": "^8.1.0",
+    "passport": "^0.4.0",
+    "passport-twitter": "^1.0.4",
+    "ramda": "^0.26.1",
+    "react": "^16.8.6",
+    "react-dom": "^16.8.6"
+  }
+}
