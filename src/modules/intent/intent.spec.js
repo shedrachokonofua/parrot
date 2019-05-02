@@ -3,28 +3,13 @@ const Result = require('folktale/result');
 const Validation = require('folktale/validation');
 const Intent = require('./intent');
 const { of } = require('folktale/concurrency/task');
-
-describe('#validateStartTime', () => {
-  it('should return false for invalid time string or non hour sharp times', () => {
-    expect(Intent.validateStartTime('25:02')).toEqual(Result.Error());
-    expect(Intent.validateStartTime('20:02 ')).toEqual(Result.Error());
-    expect(Intent.validateStartTime('a4:02')).toEqual(Result.Error());
-    expect(Intent.validateStartTime('2:02')).toEqual(Result.Error());
-    expect(Intent.validateStartTime('7:00')).toEqual(Result.Error());
-    expect(Intent.validateStartTime('21:02')).toEqual(Result.Error());
-  });
-
-  it('should return false for valid time string', () => {
-    expect(Intent.validateStartTime('21:00')).toEqual(Result.Ok());
-  });
-});
+const moment = require('moment');
 
 describe('#validateIntentData', () => {
   it('should return Validation.Success if no errors', async () => {
     const userHasIntentOnTweetMock = () => of(Maybe.Just());
     const userExistsMock = () => of(Maybe.Just());
     const tweetExistsMock = () => of(Result.Ok());
-    const validateStartTimeMock = () => of(Result.Ok());
     const params = {
       userId: 123,
       tweetId: 123,
@@ -34,7 +19,6 @@ describe('#validateIntentData', () => {
       userHasIntentOnTweetMock,
       userExistsMock,
       tweetExistsMock,
-      validateStartTimeMock,
       params
     ).run().promise();
     expect(result).toEqual(Validation.Success());
@@ -44,7 +28,6 @@ describe('#validateIntentData', () => {
     const userHasIntentOnTweetMock = () => of(Maybe.Nothing());
     const userExistsMock = () => of(Maybe.Just());
     const tweetExistsMock = () => of(Result.Error('Not Authorized.'));
-    const validateStartTimeMock = () => of(Result.Error(['Error 1']));
     const params = {
       userId: 123,
       tweetId: 123,
@@ -54,10 +37,19 @@ describe('#validateIntentData', () => {
       userHasIntentOnTweetMock,
       userExistsMock,
       tweetExistsMock,
-      validateStartTimeMock,
       params
     ).run().promise();
-    expect(result).toEqual(Validation.Failure(['Error 1', 'Not Authorized.', 'User has intent on tweet.']));
+    expect(result).toEqual(Validation.Failure(['Not Authorized.', 'User has intent on tweet.']));
+  });
+});
+
+describe('#calculateInitialNextTrigger', () => {
+  it('return valid next trigger', () => {
+    const createdTime = moment('2010-01-01 10:51');
+    const startTime = '8:00';
+    const interval = 5;
+    const initialNextTrigger = Intent.calculateInitialNextTrigger(createdTime, startTime, interval);
+    expect(initialNextTrigger).toEqual(moment('2010-01-01 13:00'));
   });
 });
 
@@ -65,7 +57,7 @@ describe('#createIntent', () => {
   it('should reject on validation errors', async () => {
     const IntentModelMock = {};
     const validateDataMock = () => of(Validation.Failure('Mock Error'));
-    const action = Intent.createIntent(IntentModelMock, validateDataMock, true);
+    const action = Intent.createIntent(IntentModelMock, validateDataMock, true, moment());
     await expect(action.run().promise()).rejects.toEqual('Mock Error');
   });
 
@@ -75,10 +67,31 @@ describe('#createIntent', () => {
     };
     const validateDataMock = () => of(Validation.Success());
     const result = await Intent
-      .createIntent(IntentModelMock, validateDataMock, true)
+      .createIntent(IntentModelMock, validateDataMock, true, moment())
       .run()
       .promise();
     expect(result).toEqual({ _id: 3 });
+  });
+
+  it('should set nextTrigger time', async () => {
+    const IntentModelMock = {
+      create: jest.fn().mockImplementation(() => Promise.resolve())
+    };
+    const mockIntentData = {
+      userId: 123,
+      tweetId: '123',
+      startTime: '10:00',
+      interval: 2,
+      enabled: true
+    };
+    const now = moment('2010-01-02 15:00');
+    const validateDataMock = () => of(Validation.Success());
+    const result = await Intent
+      .createIntent(IntentModelMock, validateDataMock, mockIntentData, now)
+      .run()
+      .promise();
+    console.log(IntentModelMock.create.mock.calls[0][0])
+    expect(IntentModelMock.create.mock.calls[0][0].nextTrigger).toEqual(moment('2010-01-02 16:00'));
   });
 });
 
@@ -139,3 +152,35 @@ describe('#modifyIntent', () => {
     expect(IntentModelMock.updateOne.mock.calls.length).toBe(1);
   });
 });
+
+// describe('#getImpedingIntents', () => {
+//   it('should return all intents to be triggered within interval period', async () => {
+//     const now = moment("2010-01-02 10:00");
+//     const mockIntents = [{ // should trigger
+//       startTime: '12:00',
+//       interval: 2,
+//       createdAt: moment("2010-01-01"),
+//       enabled: true
+//     }, { // should not trigger: not impending
+//       startTime: '11:00',
+//       interval: 2,
+//       createdAt: moment("2010-01-01"),
+//       enabled: false
+//     }, { // should not trigger: not enabled
+//       startTime: '10:00',
+//       interval: 6,
+//       createdAt: moment("2010-01-01"),
+//       enabled: false
+//     }, { // should trigger
+//       startTime: '19:00',
+//       interval: 5,
+//       createdAt: moment("2010-01-01"),
+//       enabled: true
+//     }, { // should not trigger: not impending
+//       startTime: '12:00',
+//       interval: 7,
+//       createdAt: moment("2010-01-01"),
+//       enabled: true
+//     }];
+//   });
+// })

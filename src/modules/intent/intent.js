@@ -3,11 +3,12 @@ const Maybe = require('folktale/maybe');
 const Result = require('folktale/result');
 const Validation = require('folktale/validation');
 const { of, rejected, fromPromised, waitAll } = require('folktale/concurrency/task');
+const moment = require('moment');
 
-module.exports.validateStartTime = startTime => {
-  const valid = (/^(0[0-9]|1[0-9]|2[0-3]):00$/g).test(startTime);
-  return valid ? Result.Ok() : Result.Error();
-}
+module.exports.calculateInitialNextTrigger = (createdTime, startTime, interval) => {
+  const startHour = startTime.split(':')[0];
+  const startTime = moment
+};
 
 module.exports.getIntents = R.curry((IntentModel, query) => {
   return fromPromised(IntentModel.find)(query)
@@ -22,8 +23,7 @@ module.exports.validateIntentData = R.curry((
   getUserIntentByTweet, 
   getUserById, 
   getTweetById, 
-  validateStartTime,
-  { userId, tweetId, startTime }
+  { userId, tweetId }
 ) => {
   const maybeToResult = (maybeTask, failureReason) => {
     return maybeTask.map(result => result.matchWith({
@@ -32,7 +32,6 @@ module.exports.validateIntentData = R.curry((
     }));
   }
   return waitAll([
-    validateStartTime(startTime),
     getTweetById(userId, tweetId),
     maybeToResult(getUserById(userId), 'User does not exist.'),
     maybeToResult(getUserIntentByTweet(userId, tweetId), 'User has intent on tweet.')
@@ -41,7 +40,7 @@ module.exports.validateIntentData = R.curry((
   .map(Validation.collect);
 });
 
-module.exports.createIntent = R.curry((IntentModel, validateData, intentData) => {
+module.exports.createIntent = R.curry((IntentModel, validateData, intentData, now) => {
   return validateData(intentData)
     .chain(result => result.matchWith({
       Success: () => of(intentData),

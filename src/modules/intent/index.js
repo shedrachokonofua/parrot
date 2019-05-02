@@ -14,8 +14,7 @@ const deleteIntent = Intent.deleteIntent(IntentModel, getIntentById);
 const validateIntentData = Intent.validateIntentData(
   getUserIntentByTweet,
   fromPromised(getUserById),
-  fromPromised(getTweetById),
-  Intent.validateStartTime
+  fromPromised(getTweetById)
 );
 
 module.exports = {

@@ -7,12 +7,14 @@ module.exports = new Schema({
     required: true
   },
   tweetId: { // Tweet Id
-    type: Number,
-    required: true
-  },
-  startTime: { // HH:00
     type: String,
     required: true
+  },
+  startHour: { 
+    type: Number,
+    required: true,
+    min: 0,
+    max: 23
   },
   interval: { // In hours
     type: Number,
@@ -21,6 +23,10 @@ module.exports = new Schema({
   enabled: {
     type: Boolean,
     default: true,
+    required: true
+  },
+  nextTrigger: {
+    type: Date,
     required: true
   }
 } { 
