@@ -1,7 +1,12 @@
 const { Schema } = require('mongoose');
 
 module.exports = new Schema({
-  tweedId: { // Tweet Id
+  userId: {
+    type: 'ObjectId', 
+    ref: 'User',
+    required: true
+  },
+  tweetId: { // Tweet Id
     type: Number,
     required: true
   },
