@@ -5,15 +5,17 @@ const Intent = require('./intent');
 const { of } = require('folktale/concurrency/task');
 
 describe('#validateStartTime', () => {
-  it('should return false for invalid time string', () => {
+  it('should return false for invalid time string or non hour sharp times', () => {
     expect(Intent.validateStartTime('25:02')).toEqual(Result.Error());
     expect(Intent.validateStartTime('20:02 ')).toEqual(Result.Error());
     expect(Intent.validateStartTime('a4:02')).toEqual(Result.Error());
     expect(Intent.validateStartTime('2:02')).toEqual(Result.Error());
+    expect(Intent.validateStartTime('7:00')).toEqual(Result.Error());
+    expect(Intent.validateStartTime('21:02')).toEqual(Result.Error());
   });
 
   it('should return false for valid time string', () => {
-    expect(Intent.validateStartTime('21:02')).toEqual(Result.Ok());
+    expect(Intent.validateStartTime('21:00')).toEqual(Result.Ok());
   });
 });
 

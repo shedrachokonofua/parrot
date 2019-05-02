@@ -5,7 +5,7 @@ const Validation = require('folktale/validation');
 const { of, rejected, fromPromised, waitAll } = require('folktale/concurrency/task');
 
 module.exports.validateStartTime = startTime => {
-  const valid = (/^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$/g).test(startTime);
+  const valid = (/^(0[0-9]|1[0-9]|2[0-3]):00$/g).test(startTime);
   return valid ? Result.Ok() : Result.Error();
 }
 
@@ -66,4 +66,8 @@ module.exports.modifyIntent = R.curry((IntentModel, getIntentById, id, changes) 
       Just: () => fromPromised(IntentModel.updateOne)({ _id: id }, changes),
       Nothing: () => rejected('Intent does not exist.')
     }));
+});
+
+module.exports.getImpedingIntents = R.curry((getIntents, currentTime, triggerPeriod) => {
+  
 });

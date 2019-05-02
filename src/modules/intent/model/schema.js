@@ -10,11 +10,11 @@ module.exports = new Schema({
     type: Number,
     required: true
   },
-  startTime: {
+  startTime: { // HH:00
     type: String,
     required: true
   },
-  interval: {
+  interval: { // In hours
     type: Number,
     required: true
   },
@@ -23,4 +23,8 @@ module.exports = new Schema({
     default: true,
     required: true
   }
+} { 
+  timestamps: { 
+    createdAt: 'timestamp' 
+  } 
 });
