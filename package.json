@@ -15,6 +15,7 @@
     "jest": "^24.7.1"
   },
   "dependencies": {
+    "dotenv": "^7.0.0",
     "folktale": "^2.3.2",
     "mongoose": "^5.5.4",
     "next": "^8.1.0",
@@ -22,6 +23,7 @@
     "passport-twitter": "^1.0.4",
     "ramda": "^0.26.1",
     "react": "^16.8.6",
-    "react-dom": "^16.8.6"
+    "react-dom": "^16.8.6",
+    "twit": "^2.2.11"
   }
 }
