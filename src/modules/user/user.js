@@ -1,26 +1,34 @@
 const R = require('ramda');
 const Maybe = require('folktale/maybe');
-const { task, of } = require('folktale/concurrency/task');
+const { of, fromPromised, rejected } = require('folktale/concurrency/task');
 
-module.exports.createUser = (UserModel, userData) => task(resolver => {
-  UserModel
-    .create(userData)
-    .then(user => resolver.resolve(user))
-    .catch(error => resolver.reject(error));
+module.exports.createUser = R.curry((UserModel, userData) => fromPromised(UserModel.create)(userData));
+
+module.exports.getUser = R.curry((UserModel, search) => {
+  return fromPromised(UserModel.findOne)(search)
+    .map(R.ifElse(R.isNil, Maybe.Nothing, Maybe.Just));
 });
 
-module.exports.findUserByTwitterId = (UserModel, twitterId) => task(resolver => {
-  const containResult = R.ifElse(R.isNil, Maybe.Nothing, Maybe.Just);
-  UserModel
-    .findOne({ tId: twitterId })
-    .then(user => resolver.resolve(containResult(user)))
-    .catch(error => resolver.reject(error));
-});
+module.exports.getUserByTwitterId = R.curry((getUser, twitterId) => getUser({ tid: twitterId }));
 
-module.exports.findOrCreate = function (createUser, findUserByTwitterId, UserModel, userData) {
-  return findUserByTwitterId(UserModel, R.prop('tId'))
+module.exports.getUserById = R.curry((getUser, id) => getUser({ _id: id }));
+
+module.exports.getOrCreate = R.curry((createUser, getUserByTwitterId, userData) => {
+  return getUserByTwitterId(userData.tId)
     .chain(result => result.matchWith({
       Just: data => of(data.value),
-      Nothing: () => createUser(UserModel, userData)
+      Nothing: () => createUser(userData)
     }));
-}
+});
+
+module.exports.getCredsByUserId = R.curry((getUserById, userId) => {
+  const missingEitherCred = creds => R.or(R.isNil(creds.token), R.isNil(creds.secret));
+
+  return getUserById(userId)
+    .chain(result => result.matchWith({
+      Just: data => of(data.value),
+      Nothing: () => rejected('User does not exist.')
+    }))
+    .map(R.prop('creds'))
+    .map(R.ifElse(missingEitherCred, Maybe.Nothing, Maybe.Just))
+});
