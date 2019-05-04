@@ -5,9 +5,12 @@ const Validation = require('folktale/validation');
 const { of, rejected, fromPromised, waitAll } = require('folktale/concurrency/task');
 const moment = require('moment');
 
-module.exports.calculateInitialNextTrigger = (createdTime, startTime, interval) => {
-  const startHour = startTime.split(':')[0];
-  const startTime = moment
+module.exports.calculateInitialNextTrigger = (createdTime, startHour, interval) => {
+  const startHourOnCreatedDay = (created, hour) => moment(created).set({ hour, minute: 0, second: 0 });
+  return R.until(
+    hour => moment(hour).isAfter(createdTime),
+    hour => moment(hour).add(interval, 'hours')
+  )(startHourOnCreatedDay(createdTime, startHour));
 };
 
 module.exports.getIntents = R.curry((IntentModel, query) => {
@@ -40,12 +43,16 @@ module.exports.validateIntentData = R.curry((
   .map(Validation.collect);
 });
 
-module.exports.createIntent = R.curry((IntentModel, validateData, intentData, now) => {
+module.exports.createIntent = R.curry((IntentModel, calculateInitialNextTrigger, validateData, intentData, now) => {
+  const nextTrigger = data => calculateInitialNextTrigger(now, data.startHour, data.interval);
+  const setInitialNextTrigger = data => R.set(R.lensProp('nextTrigger'), nextTrigger(data), data);
+
   return validateData(intentData)
     .chain(result => result.matchWith({
       Success: () => of(intentData),
       Failure: (reasons) => rejected(reasons.value)
     }))
+    .map(setInitialNextTrigger)
     .chain(fromPromised(IntentModel.create));
 });
 
@@ -62,11 +69,20 @@ module.exports.deleteIntent = R.curry((IntentModel, getIntentById, id) => {
 module.exports.modifyIntent = R.curry((IntentModel, getIntentById, id, changes) => {
   return getIntentById(id)
     .chain(result => result.matchWith({
-      Just: () => fromPromised(IntentModel.updateOne)({ _id: id }, changes),
+      Just: () => fromPromised(IntentModel.findOneAndUpdate)({ _id: id }, changes, { new: true }),
       Nothing: () => rejected('Intent does not exist.')
     }));
 });
 
-module.exports.getImpedingIntents = R.curry((getIntents, currentTime, triggerPeriod) => {
-  
+module.exports.shiftNextTrigger = R.curry((getIntentById, modifyIntent, id) => {
+  return getIntentById(id)
+    .chain(result => result.matchWith({
+      Just: (data) => of(data.value),
+      Nothing: () => rejected('Intent does not exist.')
+    }))
+    .chain(({ nextTrigger, interval }) => modifyIntent(id, { nextTrigger: moment(nextTrigger).add(interval, 'hours') }));
+});
+
+module.exports.getImpedingIntents = R.curry((getIntents, currentTime) => {
+  return getIntents({ nextTrigger: currentTime });
 });

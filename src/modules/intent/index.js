@@ -1,3 +1,4 @@
+const moment = require('moment');
 const { fromPromised } = require('folktale/concurrency/task'); 
 const { getUserById } = require('../user/');
 const { getTweetById } = require('../../integrations/twitter/')
@@ -16,6 +17,8 @@ const validateIntentData = Intent.validateIntentData(
   fromPromised(getUserById),
   fromPromised(getTweetById)
 );
+const shiftNextTrigger = Intent.shiftNextTrigger(getIntentById, modifyIntent);
+const getImpedingIntents = Intent.getImpedingIntents(getIntents, moment());
 
 module.exports = {
   async createIntent(data) {
@@ -32,5 +35,11 @@ module.exports = {
   },
   async deleteIntent(id) {
     return deleteIntent(id).run().promise();
+  },
+  async shiftNextTrigger(id) {
+    return shiftNextTrigger(id).run().promise();
+  },
+  async getImpedingIntents() {
+    return getImpedingIntents().run().promise();
   }
 };
