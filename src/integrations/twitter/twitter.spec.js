@@ -1,7 +1,6 @@
-const Result = require('folktale/result');
 const Maybe = require('folktale/maybe');
 const twitter = require('./twitter');
-const { of, fromPromised, rejected } = require('folktale/concurrency/task');
+const { of, rejected } = require('folktale/concurrency/task');
 
 describe('#clientForUser', () => {
   it('should throw error if user credentials missing', async () => {
@@ -37,6 +36,4 @@ describe('#retweet', () => {
     const action = twitter.retweet(getTweetByIdMock, deleteRetweetMock, clientForUserMock, 1, 1).run().promise();
     await expect(action).rejects.toEqual('Mock Error');
   });
-
-  // it('should return Result.Ok if successful');
 });
