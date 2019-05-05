@@ -9,14 +9,19 @@ const client = Twitter.twitterClient(
   process.env.TWITTER_CONSUMER_SECRET
 );
 
-const getTweetById = Twitter.getTweetById(
-  fromPromised(getCredsByUserId),
-  client
-);
+const getCredsByUserIdTask = fromPromised(getCredsByUserId);
+const clientForUser = Twitter.clientForUser(getCredsByUserIdTask, client);
+
+const getTweetById = Twitter.getTweetById(clientForUser);
+const deleteRetweet = Twitter.deleteRetweet(clientForUser);
+const retweet = Twitter.retweet(getTweetById, deleteRetweet, clientForUser);
 
 module.exports = {
   _client: client,
   async getTweetById(userId, tweetId) {
     return getTweetById(userId, tweetId).run().promise();
+  },
+  async retweet(userId, tweetId) {
+    return retweet(userId, tweetId).run().promise();
   }
 };
