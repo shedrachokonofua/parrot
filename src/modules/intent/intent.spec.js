@@ -2,7 +2,7 @@ const Maybe = require('folktale/maybe');
 const Result = require('folktale/result');
 const Validation = require('folktale/validation');
 const Intent = require('./intent');
-const { of } = require('folktale/concurrency/task');
+const { of, rejected } = require('folktale/concurrency/task');
 const moment = require('moment');
 
 describe('#validateIntentData', () => {
@@ -27,7 +27,7 @@ describe('#validateIntentData', () => {
   it('should return concatenation of Validation errors if any', async () => {
     const userHasIntentOnTweetMock = () => of(Maybe.Nothing());
     const userExistsMock = () => of(Maybe.Just());
-    const tweetExistsMock = () => of(Result.Error(['Not Authorized.']));
+    const tweetExistsMock = () => rejected('Not Authorized.');
     const params = {
       userId: 123,
       tweetId: 123,

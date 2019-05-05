@@ -35,7 +35,7 @@ module.exports.validateIntentData = R.curry((
     }));
   }
   return waitAll([
-    getTweetById(userId, tweetId),
+    getTweetById(userId, tweetId).map(Result.Ok).orElse(reason => of(Result.Error([ reason ]))),
     maybeToResult(getUserById(userId), 'User does not exist.'),
     maybeToResult(getUserIntentByTweet(userId, tweetId), 'User has intent on tweet.')
   ])

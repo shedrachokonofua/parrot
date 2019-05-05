@@ -21,8 +21,6 @@ module.exports.clientForUser = R.curry((getCredsByUserId, twitterClient, userId)
     .map(({ token, secret }) => twitterClient(token, secret));
 });
 
-
-
 module.exports.getTweetById = R.curry((clientForUser, userId, tweetId) => {
   return clientForUser(userId)
     .chain(client => fromPromised(client.get.bind(client))('statuses/show/:id', { id: tweetId, include_my_retweet: true }))
